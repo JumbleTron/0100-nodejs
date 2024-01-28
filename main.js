@@ -1,63 +1,62 @@
 import http from 'http';
+import { parse } from 'url';
 
-const users = [
-	{ id: 49, username: 'maciek', email: 'mackiek@mail.com' }
+let users = [
+	{ id: 49, username: 'maciek'},
 ];
 
-const readBody = (req, callback) => {
-	let body = '';
-	req.on('data', (chunk) => {
-		body += chunk;
-	});
-	req.on('end', () => {
-		try {
-			const data = JSON.parse(body);
-			callback(data, null);
-		} catch (error) {
-			callback(null, error);
-		}
+const readBody = req => {
+	return new Promise((resolve, reject) => {
+		let body = '';
+		req.on('data', chunk => body += chunk);
+		req.on('end', () => {
+			try { resolve(JSON.parse(body)); }
+			catch (error) { reject(error); }
+		});
 	});
 };
 
-const server = http.createServer((req, res) => {
-	let message = { error: 'Not found' };
+const server = http.createServer(async (req, res) => {
+	const parsedUrl = parse(req.url, true);
+	const pathSegments = parsedUrl.pathname
+		.split('/')
+		.filter((segment) => segment !== '');
+	
+	const objectId = parseInt(pathSegments[pathSegments.length - 1]);
 	let statusCode = 404;
-	if (req.url === '/users' && req.method === 'GET') {
+	let body = { error: 'Not found' };
+	
+	if (parsedUrl.pathname === '/users' && req.method === 'GET') {
 		statusCode = 200;
-		res.writeHead(200, { 'Content-Type': 'application/json' });
-		console.log(users)
-		res.end(JSON.stringify(users));
-		return;
+		body = users;
 	}
-	if (req.url === '/users' && req.method === 'POST') {
-		readBody(req, (data, error) => {
-			if (error !== null) {
-				message = { error: 'Bad request' }
-				res.writeHead(400, { 'Content-Type': 'application/json' });
-				console.log(message)
-				res.end(JSON.stringify(message));
-			} else {
-				const { username, email } = data;
-				const user = {
-					id: Math.floor(Math.random() * 100),
-					username,
-					email
-				}
-				users.push(user)
-				res.writeHead(201, { 'Content-Type': 'application/json' });
-				console.log(user)
-				res.end(JSON.stringify(user));
-				return;
-			}
-		})
+	
+	if (parsedUrl.pathname === '/users' && req.method === 'POST') {
+		const user = await readBody(req);
+		let lastId = 0;
+		users.map((user) => {
+			lastId = Math.max(lastId, user.id);
+		});
+		user.id = lastId + 1;
+		users.push(user);
+		
+		statusCode = 201;
+		body = user;
 	}
-	/*res.statusCode = 200;
-	res.setHeader('Content-Type', 'text/plan');
-	const message = `Node application pid: ${process.pid}, db_host is ${process.env.DB_HOST}`
-	console.log(message);*/
+	
+	if (req.method === 'GET' && !isNaN(objectId)) {
+		const user = users.find(u => u.id === objectId);
+		if (!user) {
+			statusCode = 404;
+			return;
+		}
+		
+		statusCode = 200;
+		body = user;
+	}
+	
+	res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+	res.end(JSON.stringify(body));
 });
 
-server.listen(3005, () => {
-	console.log(`Server running at http://localhost:${3005}/`);
-});
-//node -r dotenv/config
+server.listen(3005, () => console.log(`Server running at http://localhost:3005/`));
