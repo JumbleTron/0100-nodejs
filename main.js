@@ -1,5 +1,8 @@
 import http from 'http';
 import { parse } from 'url';
+import { Worker } from 'worker_threads'
+import cluster from "cluster";
+import { availableParallelism } from 'node:os';
 
 let users = [
 	{ id: 49, username: 'maciek'},
@@ -16,47 +19,68 @@ const readBody = req => {
 	});
 };
 
-const server = http.createServer(async (req, res) => {
-	const parsedUrl = parse(req.url, true);
-	const pathSegments = parsedUrl.pathname
-		.split('/')
-		.filter((segment) => segment !== '');
+//if (cluster.isPrimary) {
+	//console.log(`Primary ${process.pid} is running`);
+	//for (let i = 0; i < availableParallelism(); i++) {
+	//	cluster.fork();
+	//}
 	
-	const objectId = parseInt(pathSegments[pathSegments.length - 1]);
-	let statusCode = 404;
-	let body = { error: 'Not found' };
-	
-	if (parsedUrl.pathname === '/users' && req.method === 'GET') {
-		statusCode = 200;
-		body = users;
-	}
-	
-	if (parsedUrl.pathname === '/users' && req.method === 'POST') {
-		const user = await readBody(req);
-		let lastId = 0;
-		users.map((user) => {
-			lastId = Math.max(lastId, user.id);
-		});
-		user.id = lastId + 1;
-		users.push(user);
+	/*cluster.on('exit', (worker, code, signal) => {
+		console.log(`worker ${worker.process.pid} died`);
+	});*/
+//} else {
+	const server = http.createServer(async (req, res) => {
+		const parsedUrl = parse(req.url, true);
+		const pathSegments = parsedUrl.pathname
+			.split('/')
+			.filter((segment) => segment !== '');
 		
-		statusCode = 201;
-		body = user;
-	}
-	
-	if (req.method === 'GET' && !isNaN(objectId)) {
-		const user = users.find(u => u.id === objectId);
-		if (!user) {
-			statusCode = 404;
-			return;
+		const objectId = parseInt(pathSegments[pathSegments.length - 1]);
+		let statusCode = 404;
+		let body = {error: 'Not found'};
+		
+		if (parsedUrl.pathname === '/users' && req.method === 'GET') {
+			statusCode = 200;
+			body = users;
 		}
 		
-		statusCode = 200;
-		body = user;
-	}
+		if (parsedUrl.pathname === '/slow' && req.method === 'GET') {
+			const worker = new Worker('./worker-thread.js')
+			worker.on('message', (message) => {
+				res.writeHead(statusCode, {'Content-Type': 'application/json'});
+				res.end(JSON.stringify(message));
+			})
+			return
+		}
+		
+		if (parsedUrl.pathname === '/users' && req.method === 'POST') {
+			const user = await readBody(req);
+			let lastId = 0;
+			users.map((user) => {
+				lastId = Math.max(lastId, user.id);
+			});
+			user.id = lastId + 1;
+			users.push(user);
+			
+			statusCode = 201;
+			body = user;
+		}
+		
+		if (req.method === 'GET' && !isNaN(objectId)) {
+			const user = users.find(u => u.id === objectId);
+			if (!user) {
+				statusCode = 404;
+				return;
+			}
+			
+			statusCode = 200;
+			body = user;
+		}
+		
+		res.writeHead(statusCode, {'Content-Type': 'application/json'});
+		res.end(JSON.stringify(body));
+	});
 	
-	res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-	res.end(JSON.stringify(body));
-});
-
-server.listen(3005, () => console.log(`Server running at http://localhost:3005/`));
+	//console.log(`Worker ${process.pid} started`);
+	server.listen(process.env.PORT ?? 3005, () => console.log(`Server running at http://localhost:3005/`));
+//}
