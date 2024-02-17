@@ -19,16 +19,16 @@ const readBody = req => {
 	});
 };
 
-//if (cluster.isPrimary) {
-	//console.log(`Primary ${process.pid} is running`);
-	//for (let i = 0; i < availableParallelism(); i++) {
-	//	cluster.fork();
-	//}
+if (cluster.isPrimary) {
+	console.log(`Primary ${process.pid} is running`);
+	for (let i = 0; i < availableParallelism(); i++) {
+		cluster.fork();
+	}
 	
-	/*cluster.on('exit', (worker, code, signal) => {
+	cluster.on('exit', (worker) => {
 		console.log(`worker ${worker.process.pid} died`);
-	});*/
-//} else {
+	});
+} else {
 	const server = http.createServer(async (req, res) => {
 		const parsedUrl = parse(req.url, true);
 		const pathSegments = parsedUrl.pathname
@@ -81,6 +81,6 @@ const readBody = req => {
 		res.end(JSON.stringify(body));
 	});
 	
-	//console.log(`Worker ${process.pid} started`);
+	console.log(`Worker ${process.pid} started`);
 	server.listen(process.env.PORT ?? 3005, () => console.log(`Server running at http://localhost:3005/`));
-//}
+}
