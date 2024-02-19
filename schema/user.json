@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "default": {},
+  "title": "Root Schema",
+  "required": [
+    "username",
+    "email",
+    "birth_date"
+  ],
+  "properties": {
+    "username": {
+      "type": "string",
+      "default": "",
+      "title": "The username Schema",
+      "examples": [
+        "abc"
+      ]
+    },
+    "email": {
+      "type": "string",
+      "default": "",
+      "title": "The email Schema",
+      "format": "email",
+      "examples": [
+        "abc@mail.com"
+      ]
+    },
+    "birth_date": {
+      "type": "string",
+      "default": "",
+      "title": "The birth_date Schema",
+      "format": "date",
+      "examples": [
+        "10-02-1987"
+      ]
+    }
+  },
+  "examples": [{
+    "username": "abc",
+    "email": "abc@mail.com",
+    "birth_date": "10-02-1987"
+  }]
+}

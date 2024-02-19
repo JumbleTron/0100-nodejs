@@ -3,6 +3,10 @@ import { parse } from 'url';
 import { Worker } from 'worker_threads'
 import cluster from "cluster";
 import { availableParallelism } from 'node:os';
+import Ajv from "ajv";
+import addFormats from "ajv-formats"
+import userSchema from './schema/user.json' assert { type: "json" }
+import * as fs from "fs";
 
 let users = [
 	{ id: 49, username: 'maciek'},
@@ -47,15 +51,29 @@ if (cluster.isPrimary) {
 		if (parsedUrl.pathname === '/slow' && req.method === 'GET') {
 			const worker = new Worker('./worker-thread.js')
 			worker.on('message', (message) => {
-				res.writeHead(statusCode, {'Content-Type': 'application/json'});
+				res.writeHead(statusCode, { 'Content-Type': 'application/json' });
 				res.end(JSON.stringify(message));
 			})
 			return
 		}
 		
 		if (parsedUrl.pathname === '/users' && req.method === 'POST') {
-			const user = await readBody(req);
-			let lastId = 0;
+			const userBody = await readBody(req);
+			const ajv = new Ajv({ allErrors: true })
+			addFormats(ajv)
+			const validate = ajv.compile(userSchema)
+			const valid = validate(userBody)
+			
+			//@todo return formatted errors as below {
+			// 	"errors": [
+			// 		"field_name": [ valdiation_errors ]
+			//    ]
+			// }
+			if (!valid) {
+				statusCode = 422;
+				body = validate.errors
+			}
+			/*let lastId = 0;
 			users.map((user) => {
 				lastId = Math.max(lastId, user.id);
 			});
@@ -63,7 +81,7 @@ if (cluster.isPrimary) {
 			users.push(user);
 			
 			statusCode = 201;
-			body = user;
+			body = user;*/
 		}
 		
 		if (req.method === 'GET' && !isNaN(objectId)) {
@@ -75,6 +93,22 @@ if (cluster.isPrimary) {
 			
 			statusCode = 200;
 			body = user;
+		}
+		
+		if (req.method === 'GET' && /^\/avatars\/\w+\.png$/.test(parsedUrl.pathname)) {
+			res.writeHead(statusCode, { 'Content-Type': 'image/png' });
+			const parts = parsedUrl.pathname.split('/')
+			// @todo add not found for not existing files
+			fs.createReadStream('public/' + parts.pop()).pipe(res);
+			return;
+		}
+		
+		if (req.method === 'GET' && /^\/assets\/(\w+\.\w+)/.test(parsedUrl.pathname)) {
+			// @todo return Content-Typ header based on file extension, public/assets dir contains sample files.
+			//const extension = path.extname('/example.csv');
+			res.writeHead(statusCode, { 'Content-Type': 'text' });
+			fs.createReadStream('public/assets/example.csv').pipe(res);
+			return;
 		}
 		
 		res.writeHead(statusCode, {'Content-Type': 'application/json'});
