@@ -111,6 +111,19 @@ if (cluster.isPrimary) {
 			return;
 		}
 		
+		//@todo add endpoint POST /rooms/{id}/book, and data validation for below data
+		/**
+		 * {
+		 *   "user_id": required | guuid(https://pl.wikipedia.org/wiki/Globally_Unique_Identifier),
+		 *   "check_in_date": required | date | format:"2024-04-15",
+		 *   "check_out_date": required | date | format:"2024-04-15",
+		 *   "check_in_time": optional | time | format:"5:20",
+		 *   "phone_number": required | example: "+1234567890",
+		 *   "room_type": required | allowed values: single, double, triple, king
+		 *   "special_requests": optional | string | max length: 320
+		 * }
+		 */
+		
 		res.writeHead(statusCode, {'Content-Type': 'application/json'});
 		res.end(JSON.stringify(body));
 	});
