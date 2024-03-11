@@ -2,6 +2,6 @@ import { parentPort } from 'worker_threads';
 
 let j = 0;
 for (let i = 0; i < 6000000000; i++) {
-	j++
+  j++;
 }
-parentPort.postMessage(j)
+parentPort.postMessage(j);
