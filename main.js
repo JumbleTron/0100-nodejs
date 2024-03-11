@@ -11,22 +11,22 @@ import cookieParser from 'cookie-parser';
 
 const PORT = process.env.port || 3000;
 
-
-passport.use('local', new LocalStrategy(
-  function(username, password, done) {
+passport.use(
+  'local',
+  new LocalStrategy(function (username, password, done) {
     const user = users.filter((user) => user.username === username).pop();
     //@todo check password with bcrypt
     if (!user) {
       return done(null, false);
     }
-    
+
     if (user.password !== password) {
       return done(null, false);
     }
-    
+
     return done(null, user);
-  }
-));
+  }),
+);
 
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {

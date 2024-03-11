@@ -6,14 +6,12 @@ import * as fs from 'fs';
 
 export default async function useRouter(req, res) {
   const parsedUrl = parse(req.url, true);
-  const pathSegments = parsedUrl.pathname
-    .split('/')
-    .filter((segment) => segment !== '');
+  const pathSegments = parsedUrl.pathname.split('/').filter((segment) => segment !== '');
 
   const lastPathElement = pathSegments.pop();
   const objectId = parseInt(lastPathElement);
   const method = req.method;
-    
+
   if (parsedUrl.pathname === '/login') {
     if (method === 'POST') {
       loginPost(req, res);
@@ -22,7 +20,7 @@ export default async function useRouter(req, res) {
     loginGet(req, res);
     return;
   }
-    
+
   if (!req.isAuthenticated()) {
     res.redirect('/login');
     return;
