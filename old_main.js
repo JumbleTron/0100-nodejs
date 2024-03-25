@@ -142,6 +142,6 @@ if (cluster.isPrimary) {
     });
 
 
-console.log(`Worker ${process.pid} started`);
-server.listen(process.env.PORT ?? 3005, () => console.log(`Server running at http://localhost:3005/`));
+    console.log(`Worker ${process.pid} started`);
+    server.listen(process.env.PORT ?? 3005, () => console.log(`Server running at http://localhost:3005/`));
 }

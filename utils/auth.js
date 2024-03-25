@@ -2,9 +2,9 @@ import passport from "passport";
 import LocalStrategy from 'passport-local';
 import bcrypt from 'bcrypt';
 
-// export let users = [
-//     { id: 49, username: 'maciek', password: '$2b$10$' },
-// ];
+export let users = [
+    { id: 49, username: 'maciek', password: 'maciek' },
+];
 
 const findUserByUsername = (username) => {
     return users.find(user => user.username === username);
