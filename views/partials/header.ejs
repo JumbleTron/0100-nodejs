@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Sklep</title>
+</head>
+<body>
+<header style='background: aquamarine; padding: 15px 2%; width: 96%;'>
+    <% if (userName) { %>
+        <p>Zalogowano jako: <%= userName  %> </p>
+    <% } else { %>
+            <p>Zaloguj się!!</p>
+    <% } %>
+</header>

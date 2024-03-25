@@ -1,0 +1,10 @@
+<%- include('partials/header') %>
+<div>
+    <h1>Lista produktów</h1>
+    <ul>
+        <% products.forEach((product) => { %>
+            <%- include('partials/product', { product: product }) %>
+        <% }) %>
+    </ul>
+</div>
+<%- include('partials/footer') %>
