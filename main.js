@@ -9,6 +9,7 @@ import MemoryStore from 'express-session/session/memory.js';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import { createCategoryTable, getCategoriesList, getPostsList, sqlLite } from './config/db.js';
+import { sequelize } from './config/sequelize.js';
 
 const PORT = process.env.port || 3000;
 
@@ -72,15 +73,22 @@ const server = http.createServer(async (req, res) => {
 
 try {
   //@todo change to function with on onSuccess
-  const db = sqlLite;
-  server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}/`);
-    //createCategoryTable(db);
-  });
-  console.log(await getPostsList(db), '-------');
+  //const db = sqlLite;
+  sequelize
+    .authenticate()
+    .then(() => {
+      server.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}/`);
+      });
+    })
+    .catch((err) => {
+      console.error(err.message);
+    });
+
+  //console.log(await getPostsList(db), '-------');
   server.on('close', () => {
     console.log('Zamykam połączenie');
-    db.close();
+    //db.close();
   });
 } catch (error) {
   console.log(error.message);
